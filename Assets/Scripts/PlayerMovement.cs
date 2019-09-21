@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] float maxSpeed;
 	[SerializeField] float jumpHeight;
 	[SerializeField] float friction;
+	[SerializeField] float raycastHeight;
 	Vector3 pos;
 	Vector2 velocity;
 	public float gravity;
@@ -28,12 +29,7 @@ public class PlayerMovement : MonoBehaviour
 		pos = transform.position;
 		float direction = Input.GetAxis("Horizontal") * speed;
 
-		//Slows down and then stops the player when they stop moving.
-		if (direction == 0) {
-			velocity.x /= friction;
-		}
-
-		if (velocity.x < 0.001 && velocity.x > -0.001) {
+		if (velocity.x < 0.005 && velocity.x > -0.005) {
 			velocity.x = 0;
 		}
 
@@ -41,19 +37,22 @@ public class PlayerMovement : MonoBehaviour
 		velocity.x += direction * Time.deltaTime;
 		velocity.x = Mathf.Clamp(velocity.x, -maxSpeed, maxSpeed);
 
+		//Slows down and then stops the player.
+		velocity.x *= friction;
+
 		//Flip the player according to the last direction pressed.
 		//Fix this to not change when no movement is done.
 		GetComponent<SpriteRenderer>().flipX = (direction > 0);
 
 		//Find if grounded
-		findFloor = Physics2D.Raycast(transform.position, -Vector2.up, 7.5f);
+		findFloor = Physics2D.Raycast(transform.position, -Vector2.up, raycastHeight);
 		grounded = (findFloor.collider != null);
 
 		velocity.y = (grounded) ? 0 : velocity.y - gravity * Time.deltaTime;
 
 		//Jumping
 		if (Input.GetButtonDown("Jump") && grounded) {
-			velocity.y = jumpHeight;
+			velocity.y = jumpHeight + Mathf.Abs(velocity.x);
 		}
 
 		//Apply velocity changes to position.
