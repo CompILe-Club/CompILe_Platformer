@@ -152,11 +152,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a44bff4e9367de4ab13ff052d52860e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  standingSprite: {fileID: 21300000, guid: ee2deb4b40b20584dbd316e6ba7087db, type: 3}
+  crouchingSprite: {fileID: 21300000, guid: b7f99e8eb502b664798f4f1bd0a67378, type: 3}
   speed: 12.5
   maxSpeed: 3
   jumpHeight: 1.5
+  wallJumpPower: 1.5
   friction: 0.8
   raycastHeight: 7.6
+  horizontalRaycastLength: 6
   gravity: 8
 --- !u!212 &508738579
 SpriteRenderer:
@@ -549,8 +553,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 508738577}
-  camSpeedX: 0.1
-  camSpeedY: 0.1
+  camSpeedX: 0.08
+  camSpeedY: 0.08
 --- !u!1 &1137496455
 GameObject:
   m_ObjectHideFlags: 0

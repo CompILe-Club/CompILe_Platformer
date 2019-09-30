@@ -4,16 +4,24 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
+	public Sprite standingSprite;
+	public Sprite crouchingSprite;
 	[SerializeField] float speed;
 	[SerializeField] float maxSpeed;
 	[SerializeField] float jumpHeight;
+	[SerializeField] float wallJumpPower;
 	[SerializeField] float friction;
 	[SerializeField] float raycastHeight;
+	[SerializeField] float horizontalRaycastLength;
 	Vector3 pos;
 	Vector2 velocity;
 	public float gravity;
 	RaycastHit2D findFloor;
 	bool grounded;
+	RaycastHit2D findWallLeft;
+	RaycastHit2D findWallRight;
+	bool touchingWall;
+	bool crouching;
 
 
     // Start is called before the first frame update
@@ -50,12 +58,44 @@ public class PlayerMovement : MonoBehaviour
 
 		velocity.y = (grounded) ? 0 : velocity.y - gravity * Time.deltaTime;
 
+		//Check if touching a wall
+
+		findWallLeft = Physics2D.Raycast(transform.position, Vector2.left, horizontalRaycastLength);
+		findWallRight = Physics2D.Raycast(transform.position, Vector2.right, horizontalRaycastLength);
+		touchingWall = (findWallLeft.collider != null || findWallRight.collider != null);
+		
+
 		//Jumping
 		if (Input.GetButtonDown("Jump") && grounded) {
 			velocity.y = jumpHeight + Mathf.Abs(velocity.x);
+		}else if (Input.GetButtonDown("Jump") && touchingWall) {
+			velocity.y = jumpHeight + Mathf.Abs(velocity.x);
+			velocity.x *= -wallJumpPower;
+		}
+
+		//crouching
+		//Most of these numbers are guesses based on how much shorter I think the crouching sprite is
+		//It seems to work ok
+		if (Input.GetButtonDown("Crouch") && grounded && !crouching) {
+			GetComponent<SpriteRenderer>().sprite = crouchingSprite;
+			GetComponent<BoxCollider2D>().size = new Vector2(GetComponent<BoxCollider2D>().size.x, GetComponent<BoxCollider2D>().size.y - 2f);
+			maxSpeed /= 3;
+			velocity.x /= 3;
+			raycastHeight -= 1.5f;
+			crouching = true;
+		}
+
+		if (Input.GetButtonUp("Crouch") && crouching) {
+			GetComponent<SpriteRenderer>().sprite = standingSprite;
+			GetComponent<BoxCollider2D>().size = new Vector2(GetComponent<BoxCollider2D>().size.x, GetComponent<BoxCollider2D>().size.y + 2f);
+			maxSpeed *= 3;
+			raycastHeight += 1.5f;
+			crouching = false;
 		}
 
 		//Apply velocity changes to position.
+		//It is best to make sure that these are always the last lines in the object,
+		// as all values must be modified before they are applied to the objects position.
 		pos.x += velocity.x;
 		pos.y += velocity.y;
 		transform.position = pos;
