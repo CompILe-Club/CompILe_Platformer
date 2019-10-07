@@ -6,6 +6,9 @@ public class PlayerMovement : MonoBehaviour
 {
 	public Sprite standingSprite;
 	public Sprite crouchingSprite;
+	public int health;
+	public float invincibilityTime;
+	private float currentInvincibilityTime;
 	[SerializeField] float speed;
 	[SerializeField] float maxSpeed;
 	[SerializeField] float jumpHeight;
@@ -18,10 +21,9 @@ public class PlayerMovement : MonoBehaviour
 	public float gravity;
 	RaycastHit2D findFloor;
 	bool grounded;
-	RaycastHit2D findWallLeft;
-	RaycastHit2D findWallRight;
 	bool touchingWall;
 	bool crouching;
+	bool invincible;
 
 
     // Start is called before the first frame update
@@ -29,6 +31,8 @@ public class PlayerMovement : MonoBehaviour
     {
 		pos = transform.position;
 		velocity = new Vector2(0,0);
+		health = 3;
+		invincible = false;	
     }
 
     // FixedUpdate is called once per physics update
@@ -48,9 +52,8 @@ public class PlayerMovement : MonoBehaviour
 		//Slows down and then stops the player.
 		velocity.x *= friction;
 
-		//Flip the player according to the last direction pressed.
-		//Fix this to not change when no movement is done.
-		GetComponent<SpriteRenderer>().flipX = (direction > 0);
+		InvincibilityFrames();
+		RenderSprite();
 
 		//Find if grounded
 		findFloor = Physics2D.Raycast(transform.position, -Vector2.up, raycastHeight);
@@ -58,13 +61,20 @@ public class PlayerMovement : MonoBehaviour
 
 		velocity.y = (grounded) ? 0 : velocity.y - gravity * Time.deltaTime;
 
-		//Check if touching a wall
+		FindWall();
 
-		findWallLeft = Physics2D.Raycast(transform.position, Vector2.left, horizontalRaycastLength);
-		findWallRight = Physics2D.Raycast(transform.position, Vector2.right, horizontalRaycastLength);
-		touchingWall = (findWallLeft.collider != null || findWallRight.collider != null);
-		
+		GetPlayerInput();
 
+		//Apply velocity changes to position.
+		//It is best to make sure that these are always the last lines in the object,
+		// as all values must be modified before they are applied to the objects position.
+		pos.x += velocity.x;
+		pos.y += velocity.y;
+		transform.position = pos;
+
+    }
+
+	void GetPlayerInput() {
 		//Jumping
 		if (Input.GetButtonDown("Jump") && grounded) {
 			velocity.y = jumpHeight + Mathf.Abs(velocity.x);
@@ -92,14 +102,41 @@ public class PlayerMovement : MonoBehaviour
 			raycastHeight += 1.5f;
 			crouching = false;
 		}
+	}
 
-		//Apply velocity changes to position.
-		//It is best to make sure that these are always the last lines in the object,
-		// as all values must be modified before they are applied to the objects position.
-		pos.x += velocity.x;
-		pos.y += velocity.y;
-		transform.position = pos;
+	void FindWall() {
+		RaycastHit2D findWall;
 
-    }
+		int direction = (GetComponent<SpriteRenderer>().flipX) ? 1 : -1;
+		//Check if touching a wall
+		findWall = Physics2D.Raycast(transform.position, Vector2.right * direction, horizontalRaycastLength);
+		touchingWall = (findWall.collider != null);
+	}
+
+	void InvincibilityFrames() {
+		if (invincible) {
+			currentInvincibilityTime += Time.deltaTime;
+			if (currentInvincibilityTime > invincibilityTime) {
+				invincible = false;
+				currentInvincibilityTime = 0f;
+			}
+		}
+	}
+
+	void RenderSprite() {
+		SpriteRenderer sr = GetComponent<SpriteRenderer>();
+		//Flip the player according to the last direction pressed.
+		//Fix this to not change when no movement is done.
+		sr.flipX = (velocity.x > 0);
+		sr.color = (invincible) ? new Color(255, 50, 100) : Color.white;
+	}
+
+	public void DealDamage(int damage) {
+		if (!invincible) {
+			health -= damage;
+			velocity.x = 0f;
+			invincible = true;
+		}
+	}
 		
 }
